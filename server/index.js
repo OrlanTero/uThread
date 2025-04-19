@@ -25,19 +25,11 @@ const development = process.env.NODE_ENV === "development";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Define allowed origins for CORS
-const allowedOrigins = [
-  process.env.CLIENT_URL,
-  process.env.CLIENT_URL_LOCAL,
-  'https://uthread.site',
-  'http://localhost:3000'
-];
-
 // Create HTTP server and Socket.IO server
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: '*',  // Allow all origins temporarily
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -46,23 +38,18 @@ const io = new Server(server, {
 // Middleware
 app.use(express.json());
 
-// Configure CORS with specific options
+// Configure CORS - simple version that allows all origins for debugging
 app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.match(/https?:\/\/localhost(:\d+)?/)) {
-      callback(null, true);
-    } else {
-      console.log('Blocked by CORS:', origin);
-      callback(null, true); // Temporarily allow all origins until issues are resolved
-    }
-  },
+  origin: '*',  // Allow all origins temporarily 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
+
+// Add a specific handler for OPTIONS requests (preflight)
+app.options('*', cors());
 
 // Serve static files from the uploads directory
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
