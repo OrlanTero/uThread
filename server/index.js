@@ -37,7 +37,14 @@ const io = new Server(server, {
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+
+// Configure CORS with specific options
+app.use(cors({
+  origin: development ? process.env.CLIENT_URL_LOCAL : process.env.CLIENT_URL,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
 
 // Serve static files from the uploads directory
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
