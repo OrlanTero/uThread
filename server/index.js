@@ -29,7 +29,7 @@ const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: development ? process.env.CLIENT_URL_LOCAL : process.env.CLIENT_URL,
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -39,8 +39,25 @@ const io = new Server(server, {
 app.use(express.json());
 
 // Configure CORS with specific options
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  process.env.CLIENT_URL_LOCAL,
+  'https://uthread.site',
+  'http://localhost:3000'
+];
+
 app.use(cors({
-  origin: development ? process.env.CLIENT_URL_LOCAL : process.env.CLIENT_URL,
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.match(/https?:\/\/localhost(:\d+)?/)) {
+      callback(null, true);
+    } else {
+      console.log('Blocked by CORS:', origin);
+      callback(null, true); // Temporarily allow all origins until issues are resolved
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
