@@ -29,7 +29,7 @@ const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*',  // Allow all origins temporarily
+    origin: ['https://uthread.site', 'http://localhost:3000'], // Match the Express CORS settings
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -38,9 +38,9 @@ const io = new Server(server, {
 // Middleware
 app.use(express.json());
 
-// Configure CORS - simple version that allows all origins for debugging
+// Configure CORS - update to allow specific origins
 app.use(cors({
-  origin: '*',  // Allow all origins temporarily 
+  origin: ['https://uthread.site', 'http://localhost:3000'], // Allow your production domain and localhost for development
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
   credentials: true,
