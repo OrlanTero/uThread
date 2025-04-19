@@ -25,6 +25,14 @@ const development = process.env.NODE_ENV === "development";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Define allowed origins for CORS
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  process.env.CLIENT_URL_LOCAL,
+  'https://uthread.site',
+  'http://localhost:3000'
+];
+
 // Create HTTP server and Socket.IO server
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -39,13 +47,6 @@ const io = new Server(server, {
 app.use(express.json());
 
 // Configure CORS with specific options
-const allowedOrigins = [
-  process.env.CLIENT_URL,
-  process.env.CLIENT_URL_LOCAL,
-  'https://uthread.site',
-  'http://localhost:3000'
-];
-
 app.use(cors({
   origin: function(origin, callback) {
     // Allow requests with no origin (like mobile apps, curl requests)
