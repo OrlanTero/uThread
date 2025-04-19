@@ -46,8 +46,8 @@ router.get("/:id", async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
       .select("-password")
-      .populate("followers", "username displayName avatar")
-      .populate("following", "username displayName avatar");
+      .populate("followers", "username displayName avatar isVerified")
+      .populate("following", "username displayName avatar isVerified");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -86,7 +86,7 @@ router.get("/:id/posts", async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate("userId", ["username", "displayName", "avatar"]);
+      .populate("userId", ["username", "displayName", "avatar", "isVerified"]);
 
     // Send response with pagination metadata
     res.json({
@@ -111,7 +111,7 @@ router.get("/:id/posts", async (req, res) => {
 router.get("/:id/followers", async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
-      .populate("followers", "username displayName avatar bio");
+      .populate("followers", "username displayName avatar bio isVerified");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -133,7 +133,7 @@ router.get("/:id/followers", async (req, res) => {
 router.get("/:id/following", async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
-      .populate("following", "username displayName avatar bio");
+      .populate("following", "username displayName avatar bio isVerified");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -376,7 +376,7 @@ router.put("/block/:id", auth, async (req, res) => {
 router.get("/blocked/:id", auth, async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
-      .populate("blockedUsers.user", "username displayName avatar");
+      .populate("blockedUsers.user", "username displayName avatar isVerified");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });

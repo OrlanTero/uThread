@@ -21,8 +21,8 @@ exports.getAllTopics = async (req, res) => {
 exports.getTopicById = async (req, res) => {
   try {
     const topic = await Topic.findById(req.params.id)
-      .populate("createdBy", "username avatar")
-      .populate("moderators", "username avatar");
+      .populate("createdBy", "username avatar isVerified displayName")
+      .populate("moderators", "username avatar isVerified displayName");
     
     if (!topic) {
       return res.status(404).json({ error: "Topic not found" });
@@ -71,8 +71,8 @@ exports.createTopic = async (req, res) => {
     
     // Populate user data for response
     const topic = await Topic.findById(newTopic._id)
-      .populate("createdBy", "username avatar")
-      .populate("moderators", "username avatar");
+      .populate("createdBy", "username avatar isVerified displayName")
+      .populate("moderators", "username avatar isVerified displayName");
     
     res.json(topic);
   } catch (err) {
@@ -128,8 +128,8 @@ exports.updateTopic = async (req, res) => {
     
     // Populate user data for response
     const updatedTopic = await Topic.findById(topic._id)
-      .populate("createdBy", "username avatar")
-      .populate("moderators", "username avatar");
+      .populate("createdBy", "username avatar isVerified displayName")
+      .populate("moderators", "username avatar isVerified displayName");
     
     res.json(updatedTopic);
   } catch (err) {
@@ -249,7 +249,7 @@ exports.getTopicPosts = async (req, res) => {
       topicId: topic._id,
       parentPostId: null // Only get parent posts, not replies
     })
-    .populate("userId", "username avatar")
+    .populate("userId", "username avatar isVerified displayName")
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
@@ -370,7 +370,7 @@ exports.getTopicsByTag = async (req, res) => {
     const topics = await Topic.find({ 
       tags: { $in: [tag] } 
     })
-    .populate("createdBy", "username avatar")
+    .populate("createdBy", "username avatar isVerified displayName")
     .sort({ postCount: -1 });
     
     res.json(topics);
@@ -384,7 +384,7 @@ exports.getTopicsByTag = async (req, res) => {
 exports.getTrendingTopics = async (req, res) => {
   try {
     const topics = await Topic.find()
-      .populate("createdBy", "username avatar")
+      .populate("createdBy", "username avatar isVerified displayName")
       .sort({ postCount: -1, subscribers: -1 })
       .limit(10);
     
@@ -403,7 +403,7 @@ exports.getTopicsByCategory = async (req, res) => {
     const topics = await Topic.find({ 
       category: { $regex: new RegExp(`^${category}$`, 'i') } 
     })
-      .populate("createdBy", "username avatar")
+      .populate("createdBy", "username avatar isVerified displayName")
       .sort({ createdAt: -1 });
     
     if (!topics.length) {

@@ -23,7 +23,7 @@ router.get("/", async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate("userId", ["username", "avatar"]);
+      .populate("userId", ["username", "avatar", "isVerified", "displayName"]);
 
     // Send response with pagination metadata
     res.json({
@@ -69,7 +69,7 @@ router.get("/hashtag/:hashtag", async (req, res) => {
       hashtags: { $in: [hashtag.toLowerCase()] },
       parentPostId: null // Only get parent posts, not replies
     })
-    .populate("userId", ["username", "avatar"])
+    .populate("userId", ["username", "avatar", "isVerified", "displayName"])
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
@@ -137,7 +137,7 @@ router.get("/bookmarks", auth, async (req, res) => {
     
     // Get posts with pagination
     const posts = await Post.find(query)
-      .populate("userId", ["username", "displayName", "avatar"])
+      .populate("userId", ["username", "displayName", "avatar", "isVerified"])
       .sort({ createdAt: -1 });
     
     // Send response with pagination metadata
@@ -195,6 +195,8 @@ router.get("/thread/:id", async (req, res) => {
     let post = await Post.findById(req.params.id).populate("userId", [
       "username",
       "avatar",
+      "isVerified",
+      "displayName"
     ]);
 
     if (!post) {
@@ -206,6 +208,8 @@ router.get("/thread/:id", async (req, res) => {
       post = await Post.findById(post.parentPostId).populate("userId", [
         "username",
         "avatar",
+        "isVerified",
+        "displayName"
       ]);
 
       if (!post) {
@@ -221,7 +225,7 @@ router.get("/thread/:id", async (req, res) => {
       .sort({ createdAt: 1 })
       .skip(skip)
       .limit(limit)
-      .populate("userId", ["username", "avatar"]);
+      .populate("userId", ["username", "avatar", "isVerified", "displayName"]);
 
     // Combine the parent post and replies
     const thread = {
@@ -365,12 +369,12 @@ router.post("/", auth, async (req, res) => {
     
     // Populate and return the post
     const populatedPost = await Post.findById(post._id)
-      .populate("userId", ["username", "displayName", "avatar"])
+      .populate("userId", ["username", "displayName", "avatar", "isVerified"])
       .populate({
         path: "parentPostId",
         populate: {
           path: "userId",
-          select: "username displayName avatar"
+          select: "username displayName avatar isVerified"
         }
       })
       // Also populate reThreadedPostId if this is a ReThread

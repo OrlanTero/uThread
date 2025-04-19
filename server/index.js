@@ -12,11 +12,14 @@ const uploadRoutes = require("./routes/upload");
 const topicRoutes = require("./routes/api/topics");
 const notificationRoutes = require("./routes/notifications");
 const statsRoutes = require("./routes/stats");
+const messagesRoutes = require("./routes/messages");
 const socketHandler = require("./socket/socketHandler");
 const notificationService = require("./services/notificationService");
 
 // Load environment variables
 dotenv.config();
+
+const development = process.env.NODE_ENV === "development";
 
 // Initialize Express app
 const app = express();
@@ -26,7 +29,7 @@ const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: development ? process.env.CLIENT_URL_LOCAL : process.env.CLIENT_URL,
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -41,12 +44,15 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Connect to MongoDB
 mongoose
-  .connect(process.env.MONGO_URI || "mongodb://localhost:27017/uthread")
+  .connect(development ? process.env.MONGO_URI_LOCAL : process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
 // Initialize Socket.IO connection handler
-socketHandler(io);
+const socketInstance = socketHandler(io);
+
+// Make socket instance available to routes
+app.set('socketInstance', socketInstance);
 
 // Initialize notification service with Socket.IO
 notificationService.initialize(io);
@@ -59,6 +65,7 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/topics", topicRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/stats", statsRoutes);
+app.use("/api/messages", messagesRoutes);
 
 // Print registered routes for debugging
 app._router.stack.forEach(function(r){

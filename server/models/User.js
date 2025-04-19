@@ -28,6 +28,30 @@ const UserSchema = new mongoose.Schema({
     required: true,
     minlength: 6,
   },
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+  emailVerificationOTP: {
+    type: String,
+    default: null
+  },
+  emailVerificationOTPExpires: {
+    type: Date,
+    default: null
+  },
+  emailVerificationOTPAttempts: {
+    type: Number,
+    default: 0
+  },
+  pendingEmail: {
+    type: String,
+    default: null
+  },
   bio: {
     type: String,
     default: "",
