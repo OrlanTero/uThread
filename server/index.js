@@ -30,32 +30,44 @@ const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ['https://uthread.site', 'http://localhost:3000'], // Match the Express CORS settings
+    origin: development ? 'http://localhost:3000' : 'https://uthread.site',
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"],
-    credentials: true
+    credentials: !development
   }
 });
 
-
-
-// Apply custom CORS middleware first
-app.use(corsMiddleware);
-
-// Then apply the standard CORS middleware as a fallback
-app.use(cors({
-  origin: 'https://uthread.site',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-app.options('*', cors());
-
+// Middleware
 app.use(express.json());
+
+// Apply custom CORS middleware only in production
+if (!development) {
+  app.use(corsMiddleware);
+  
+  // Then apply the standard CORS middleware as a fallback
+  app.use(cors({
+    origin: 'https://uthread.site',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
+    credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204
+  }));
+} else {
+  // In development, use a more permissive CORS setup without credentials
+  app.use(cors({
+    origin: 'http://localhost:3000',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
+    credentials: false,
+    preflightContinue: false,
+    optionsSuccessStatus: 204
+  }));
+}
 
 // Serve static files from the uploads directory
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-// Middleware
+
 // Connect to MongoDB
 mongoose
   .connect(development ? process.env.MONGO_URI_LOCAL : process.env.MONGO_URI)
