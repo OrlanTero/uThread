@@ -11,6 +11,11 @@ router.get("/activeUsers", auth, async (req, res) => {
   res.json({ count: activeUsers.length });
 });
 
+router.get("/totalUsers", auth, async (req, res) => {
+  const totalUsers = await User.countDocuments();
+  res.json({ count: totalUsers });
+});
+
 router.get("/totalPosts", auth, async (req, res) => {
   const totalPosts = await Post.countDocuments();
   res.json({ count: totalPosts });
