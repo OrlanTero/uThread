@@ -1,0 +1,26 @@
+# Enable CORS for UThread API
+<IfModule mod_headers.c>
+    # Set CORS headers for all requests
+    Header always set Access-Control-Allow-Origin "https://uthread.site"
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, x-auth-token"
+    Header always set Access-Control-Allow-Credentials "true"
+    
+    # Handle OPTIONS method
+    <If "%{REQUEST_METHOD} == 'OPTIONS'">
+        Header always set Access-Control-Allow-Origin "https://uthread.site"
+        Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        Header always set Access-Control-Allow-Headers "Content-Type, Authorization, x-auth-token"
+        Header always set Access-Control-Allow-Credentials "true"
+        # Return 200 for OPTIONS requests
+        RewriteEngine On
+        RewriteRule .* - [R=200,L]
+    </If>
+</IfModule>
+
+# Fallback for older Apache versions
+<IfModule !mod_headers.c>
+    <Files ~ "\.php$">
+        php_value auto_prepend_file "php_cors_headers.php"
+    </Files>
+</IfModule> 

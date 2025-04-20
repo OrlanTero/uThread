@@ -29,8 +29,9 @@ const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ['https://uthread.site', 'http://localhost:3000'], // Match the Express CORS settings
-    methods: ["GET", "POST"],
+    origin: ['https://uthread.site', 'http://uthread.site', 'http://localhost:3000'], // Match the Express CORS settings
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"],
     credentials: true
   }
 });
@@ -40,7 +41,7 @@ app.use(express.json());
 
 // Configure CORS - update to allow specific origins
 app.use(cors({
-  origin: ['https://uthread.site', 'http://localhost:3000'], // Allow your production domain and localhost for development
+  origin: ['https://uthread.site', 'http://uthread.site', 'http://localhost:3000'], // Allow both HTTP and HTTPS
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
   credentials: true,
@@ -49,7 +50,13 @@ app.use(cors({
 }));
 
 // Add a specific handler for OPTIONS requests (preflight)
-app.options('*', cors());
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin);
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-auth-token');
+  res.header('Access-Control-Allow-Credentials', true);
+  res.status(204).end();
+});
 
 // Serve static files from the uploads directory
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
