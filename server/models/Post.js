@@ -85,6 +85,11 @@ const PostSchema = new Schema({
   originalContent: {
     type: String,
     default: null
+  },
+  // Pinned post field
+  isPinned: {
+    type: Boolean,
+    default: false
   }
 });
 

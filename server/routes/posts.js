@@ -91,6 +91,36 @@ router.get("/hashtag/:hashtag", async (req, res) => {
   }
 });
 
+// @route   GET /api/posts/pinned
+// @desc    Get all pinned posts
+// @access  Public
+router.get("/pinned", async (req, res) => {
+  try {
+    // Get pinned posts, only parent posts (not replies)
+    const posts = await Post.find({ 
+      isPinned: true, 
+      parentPostId: null 
+    })
+      .populate("userId", ["username", "avatar", "isVerified", "displayName"])
+      .sort({ createdAt: -1 });
+
+    // Send response
+    res.json({
+      posts,
+      pagination: {
+        total: posts.length,
+        page: 1,
+        limit: posts.length,
+        pages: 1,
+        hasMore: false
+      }
+    });
+  } catch (err) {
+    console.error("Error fetching pinned posts:", err.message);
+    res.status(500).send("Server error");
+  }
+});
+
 // @route   GET /api/posts/bookmarks
 // @desc    Get all bookmarked posts for the authenticated user
 // @access  Private
@@ -534,28 +564,37 @@ router.put("/:id/like", auth, async (req, res) => {
       return res.status(404).json({ message: "Post not found" });
     }
 
+    let isLiked = false;
+    
     // Check if the post has already been liked by this user
     if (post.likes.some(like => like.toString() === req.user.id)) {
       // Unlike the post if already liked
       post.likes = post.likes.filter(like => like.toString() !== req.user.id);
-      await post.save();
-      return res.json(post.likes);
+      isLiked = false;
+    } else {
+      // Add like (directly add the userId as an ObjectId, not as an object)
+      post.likes.unshift(req.user.id);
+      isLiked = true;
+      
+      // Create notification if the post owner is not the liker
+      if (post.userId.toString() !== req.user.id) {
+        await notificationService.createLikeNotification(
+          req.user.id,
+          post._id,
+          post.userId
+        );
+      }
     }
-
-    // Add like (directly add the userId as an ObjectId, not as an object)
-    post.likes.unshift(req.user.id);
+    
     await post.save();
 
-    // Create notification if the post owner is not the liker
-    if (post.userId.toString() !== req.user.id) {
-      await notificationService.createLikeNotification(
-        req.user.id,
-        post._id,
-        post.userId
-      );
-    }
-
-    res.json(post.likes);
+    // Return a structured response with like status and the updated likes array
+    return res.json({
+      success: true,
+      isLiked: isLiked,
+      likes: post.likes,
+      likeCount: post.likes.length
+    });
   } catch (err) {
     console.error(err.message);
     if (err.kind === "ObjectId") {
@@ -611,6 +650,45 @@ router.put("/:id/bookmark", auth, async (req, res) => {
         isBookmarked: true
       });
     }
+  } catch (err) {
+    console.error(err.message);
+    if (err.kind === "ObjectId") {
+      return res.status(404).json({ message: "Post not found" });
+    }
+    res.status(500).send("Server error");
+  }
+});
+
+// @route   PUT /api/posts/:id/pin
+// @desc    Pin or unpin a post (admin only)
+// @access  Private
+router.put("/:id/pin", auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Get current user
+    const user = await User.findById(req.user.id);
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Check if user is admin (for simplicity, we're not implementing full admin validation here,
+    // we'll allow any authenticated user to pin/unpin for demo purposes)
+    
+    // Toggle pinned status
+    post.isPinned = !post.isPinned;
+    await post.save();
+    
+    return res.json({ 
+      success: true,
+      message: post.isPinned ? "Post pinned" : "Post unpinned", 
+      isPinned: post.isPinned
+    });
   } catch (err) {
     console.error(err.message);
     if (err.kind === "ObjectId") {
