@@ -37,25 +37,25 @@ const io = new Server(server, {
   }
 });
 
-// Middleware
-app.use(express.json());
+
 
 // Apply custom CORS middleware first
 app.use(corsMiddleware);
 
 // Then apply the standard CORS middleware as a fallback
 app.use(cors({
-  origin: ['https://uthread.site', 'http://localhost:3000'], // Allow both HTTP and HTTPS
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
+  origin: 'https://uthread.site',
   credentials: true,
-  preflightContinue: false,
-  optionsSuccessStatus: 204
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+app.options('*', cors());
+
+app.use(express.json());
 
 // Serve static files from the uploads directory
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
+// Middleware
 // Connect to MongoDB
 mongoose
   .connect(development ? process.env.MONGO_URI_LOCAL : process.env.MONGO_URI)
