@@ -15,6 +15,7 @@ const statsRoutes = require("./routes/stats");
 const messagesRoutes = require("./routes/messages");
 const socketHandler = require("./socket/socketHandler");
 const notificationService = require("./services/notificationService");
+const corsMiddleware = require("./middleware/corsMiddleware");
 
 // Load environment variables
 dotenv.config();
@@ -29,7 +30,7 @@ const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ['https://uthread.site', 'http://uthread.site', 'http://localhost:3000'], // Match the Express CORS settings
+    origin: ['https://uthread.site', 'http://localhost:3000'], // Match the Express CORS settings
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"],
     credentials: true
@@ -39,24 +40,18 @@ const io = new Server(server, {
 // Middleware
 app.use(express.json());
 
-// Configure CORS - update to allow specific origins
+// Apply custom CORS middleware first
+app.use(corsMiddleware);
+
+// Then apply the standard CORS middleware as a fallback
 app.use(cors({
-  origin: ['https://uthread.site', 'http://uthread.site', 'http://localhost:3000'], // Allow both HTTP and HTTPS
+  origin: ['https://uthread.site', 'http://localhost:3000'], // Allow both HTTP and HTTPS
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
   credentials: true,
   preflightContinue: false,
   optionsSuccessStatus: 204
 }));
-
-// Add a specific handler for OPTIONS requests (preflight)
-app.options('*', (req, res) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin);
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-auth-token');
-  res.header('Access-Control-Allow-Credentials', true);
-  res.status(204).end();
-});
 
 // Serve static files from the uploads directory
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -85,6 +80,7 @@ app.use("/api/topics", topicRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/api/messages", messagesRoutes);
+app.use("/cors-test", require('./cors-test')); // CORS test endpoint
 
 // Print registered routes for debugging
 app._router.stack.forEach(function(r){

@@ -1,21 +1,44 @@
 # Enable CORS for UThread API
 <IfModule mod_headers.c>
-    # Set CORS headers for all requests
-    Header always set Access-Control-Allow-Origin "https://uthread.site"
-    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, x-auth-token"
-    Header always set Access-Control-Allow-Credentials "true"
-    
-    # Handle OPTIONS method
+    # Set CORS headers for all responses
+    Header set Access-Control-Allow-Origin "https://uthread.site"
+    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization, x-auth-token"
+    Header set Access-Control-Allow-Credentials "true"
+
+    # Handle OPTIONS method specifically
+    RewriteEngine On
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^(.*)$ $1 [R=200,L]
+
+    # For OPTIONS requests, add headers and stop processing
     <If "%{REQUEST_METHOD} == 'OPTIONS'">
         Header always set Access-Control-Allow-Origin "https://uthread.site"
         Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
         Header always set Access-Control-Allow-Headers "Content-Type, Authorization, x-auth-token"
         Header always set Access-Control-Allow-Credentials "true"
-        # Return 200 for OPTIONS requests
-        RewriteEngine On
-        RewriteRule .* - [R=200,L]
+        Header always set Access-Control-Max-Age "1728000"
+        Satisfy any
+        Require all granted
     </If>
+</IfModule>
+
+# For Apache 2.2 and below that don't support <If> directives
+<IfModule !mod_authz_core.c>
+    <IfModule mod_rewrite.c>
+        RewriteEngine On
+        RewriteCond %{REQUEST_METHOD} OPTIONS
+        RewriteRule .* - [E=HTTP_ORIGIN:%{HTTP:Origin}]
+        RewriteRule .* - [E=HTTP_ACCESS_CONTROL_REQUEST_METHOD:%{HTTP:Access-Control-Request-Method}]
+        RewriteRule .* - [E=HTTP_ACCESS_CONTROL_REQUEST_HEADERS:%{HTTP:Access-Control-Request-Headers}]
+        RewriteRule ^(.*)$ $1 [R=200,L]
+    </IfModule>
+    <IfModule mod_headers.c>
+        Header set Access-Control-Allow-Origin "https://uthread.site" env=HTTP_ORIGIN
+        Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" env=HTTP_ACCESS_CONTROL_REQUEST_METHOD
+        Header set Access-Control-Allow-Headers "Content-Type, Authorization, x-auth-token" env=HTTP_ACCESS_CONTROL_REQUEST_HEADERS
+        Header set Access-Control-Allow-Credentials "true"
+    </IfModule>
 </IfModule>
 
 # Fallback for older Apache versions
